@@ -30,7 +30,6 @@ def set_convolution_layer():
     model.add(layers.MaxPooling1D(pool_size=m))
     model.add(layers.Dropout(0.5))
 
-    kernerl_size = k/2
     model.add(layers.Conv1D(N, int(k/2), padding='valid'))
     model.add(layers.Activation('relu'))
     model.add(layers.MaxPooling1D(pool_size=m))
