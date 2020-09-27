@@ -3,7 +3,6 @@ import warnings
 def warn(*args, **kwargs): pass
 warnings.warn = warn
 
-
 ### Essential ###
 import pandas as pd
 import numpy as np
@@ -56,6 +55,14 @@ def load_train_data():
     ### Random Shuffle ###
     from sklearn.utils import shuffle
     X_train, Y_train = shuffle(X_train, Y_train)  # Avoiding bias
+    
+    ## Scaling using sci-kit learn ###
+    from sklearn.preprocessing import StandardScaler
+    scale = StandardScaler()
+    X_train = scale.fit_transform(X_train)
+    
+    print("X_train.shape: {}".format(X_train.shape))
+    print("Y_train.shape: {}".format(Y_train.shape))
 
     return X_train,Y_train
 
