@@ -43,7 +43,6 @@ def set_convolution_layer():
     model.summary()
     return model
 
-#input_dir = '/home/jim513/Pyfeat/Codes/optimumDataset.csv'
 def load_train_data():
     ### Load Dataset ###
     D = pd.read_csv("optimumDataset.csv", header=None)
