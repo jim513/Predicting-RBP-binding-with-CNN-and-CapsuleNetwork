@@ -9,7 +9,7 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.keras import datasets, layers, models
 
-bs = 5112
+bs = 512
 N=16
 k=20
 m=3
