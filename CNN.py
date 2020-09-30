@@ -277,6 +277,6 @@ def calculate_performance(test_num, pred_y, labels):
 if __name__ == '__main__':
     # download lncRBPdata.zip from https://github.com/NWPU-903PR/HOCNNLB
     # data_file="./RBPdata1201/01_HITSCLIP_AGO2Karginov2013a_hg19/train/1/sequence.fa.gz"  was renamed
-    train_HOCNN(data_file= "Pyfeat_FASTA.txt")
-    #train_HOCNN(data_file= "Hocnnlb_train.txt")
+    #train_HOCNN(data_file= "Pyfeat_FASTA.txt")
+    train_HOCNN(data_file= "Hocnnlb_train.txt")
     test_HOCNN(data_file = "Hocnnlb_test.txt")
