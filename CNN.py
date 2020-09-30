@@ -54,6 +54,7 @@ def set_convolution_layer():
     model.summary()
     return model
 
+
 from sklearn.preprocessing import LabelEncoder
 
 def preprocess_labels(labels, encoder=None, categorical=True):
