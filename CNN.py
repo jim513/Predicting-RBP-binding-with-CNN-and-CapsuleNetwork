@@ -13,6 +13,7 @@ from tensorflow.keras import datasets, layers, models
 from sklearn.model_selection import KFold
 from sklearn.metrics import roc_curve, auc
 from keras.models import load_model
+from tensorflow.keras.callbacks import ModelCheckpoint
 
 import math
 import gzip
@@ -29,6 +30,12 @@ l=8
 # k = filter size , motif_size
 # m = pooling size
 # l = neuron number of fully connected layer
+
+import datetime
+# 학습데이터의 log를 저장할 폴더 생성 (지정)
+log_dir = "logs/my_board/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+# 텐서보드 콜백 정의 하기
+tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=1)
 
 def set_convolution_layer():
     input_shape = (98+k , 256)
@@ -199,7 +206,9 @@ def train_HOCNN(data_file):
 
     my_classifier = set_convolution_layer()
     my_classifier.compile(loss='categorical_crossentropy', optimizer='rmsprop',metrics=['accuracy'])
-    my_classifier.fit(seq_data, y[0], batch_size=bs, epochs=100)
+    #원래 코드
+    #my_classifier.fit(seq_data, y[0], batch_size=bs, epochs=100)
+    my_classifier.fit(seq_data, y[0], batch_size=bs, epochs=100, callbacks=[tensorboard_callback])
     print(my_classifier.summary())
 
     my_classifier.save('seqcnn3_model.pkl')
@@ -281,3 +290,9 @@ if __name__ == '__main__':
     #train_HOCNN(data_file= "Pyfeat_FASTA.txt")
     train_HOCNN(data_file= "Hocnnlb_train.txt")
     test_HOCNN(data_file = "Hocnnlb_test.txt")
+    
+    
+#텐서보드 extension 로드를 위한 magic command
+%load_ext tensorboard
+#텐서보드를 로드
+%tensorboard --logdir {log_dir}
