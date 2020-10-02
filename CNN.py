@@ -38,8 +38,8 @@ log_dir = "logs/my_board/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
 tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=1)
 
 def set_convolution_layer():
-    #input_shape = (98+k , 256)
-    input_shape = (48+k , 256)
+    #input_shape = (98+k , 256) #Using Hocnnlb data
+    input_shape = (48+k , 256)  #Using Pyfeat data
 
     model = models.Sequential()
     model.add(layers.Conv1D(N, k, padding='valid',input_shape = input_shape))
@@ -202,8 +202,6 @@ def train_HOCNN(data_file):
 
     my_classifier = set_convolution_layer()
     my_classifier.compile(loss='categorical_crossentropy', optimizer='rmsprop',metrics=['accuracy'])
-    #원래 코드
-    #my_classifier.fit(seq_data, y[0], batch_size=bs, epochs=100)
     my_classifier.fit(seq_data, y[0], batch_size=bs, epochs=100, callbacks=[tensorboard_callback])
     print(my_classifier.summary())
 
