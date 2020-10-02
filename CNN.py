@@ -38,7 +38,8 @@ log_dir = "logs/my_board/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
 tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=1)
 
 def set_convolution_layer():
-    input_shape = (98+k , 256)
+    #input_shape = (98+k , 256) #Using Hocnnlb data
+    input_shape = (48+k , 256) #Using Pyfeat data
 
     model = models.Sequential()
     model.add(layers.Conv1D(N, k, padding='valid',input_shape = input_shape))
@@ -78,11 +79,8 @@ def load_label_seq(seq_file):
     label_list = []
     seq = ''
 
-    #with gzip.open(seq_file, 'r') as fp:
     fp = open(seq_file,'r')
     for line in fp:
-        #line = str(line, encoding)
-        #print(line, line[0])
         if line[0] == '>':
             #print(line, line[0])
             name = line[1:-1]
@@ -100,11 +98,8 @@ def read_seq(seq_file,k):
     seq_list = []
     seq = ''
  
-    #with gzip.open(seq_file, 'r') as fp:
     fp = open(seq_file,'r')
     for line in fp:
-        #print(line)
-        #line = str(line, encoding)
         if line[0] == '>':
             name = line[1:-1]
             if len(seq):
@@ -206,8 +201,7 @@ def train_HOCNN(data_file):
 
     my_classifier = set_convolution_layer()
     my_classifier.compile(loss='categorical_crossentropy', optimizer='rmsprop',metrics=['accuracy'])
-    #원래 코드
-    #my_classifier.fit(seq_data, y[0], batch_size=bs, epochs=100)
+
     my_classifier.fit(seq_data, y[0], batch_size=bs, epochs=100, callbacks=[tensorboard_callback])
     print(my_classifier.summary())
 
@@ -287,9 +281,11 @@ def calculate_performance(test_num, pred_y, labels):
 if __name__ == '__main__':
     # download lncRBPdata.zip from https://github.com/NWPU-903PR/HOCNNLB
     # data_file="./RBPdata1201/01_HITSCLIP_AGO2Karginov2013a_hg19/train/1/sequence.fa.gz"  was renamed
-    #train_HOCNN(data_file= "Pyfeat_FASTA.txt")
-    train_HOCNN(data_file= "Hocnnlb_train.txt")
-    test_HOCNN(data_file = "Hocnnlb_test.txt")
+    train_HOCNN(data_file= "Pyfeat_FASTA.txt")
+    test_HOCNN(data_file= "Pyfeat_Independent_FASTA.txt")
+    
+    #train_HOCNN(data_file= "Hocnnlb_train.txt")
+    #test_HOCNN(data_file = "Hocnnlb_test.txt")
     
     
 #텐서보드 extension 로드를 위한 magic command
