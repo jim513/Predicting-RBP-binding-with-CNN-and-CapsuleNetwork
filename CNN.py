@@ -116,7 +116,8 @@ def read_seq(seq_file,k):
 
 def buildseqmapper(degree):
     length = degree
-    alphabet = ['A', 'C', 'G', 'T']
+    alphabet = ['A', 'C', 'G', 'T']  #Using Hocnnlb data
+    #alphabet = ['A', 'C', 'G', 'U'] #Using Pypeat data
     mapper = ['']
     while length > 0:
         mapper_len = len(mapper)
