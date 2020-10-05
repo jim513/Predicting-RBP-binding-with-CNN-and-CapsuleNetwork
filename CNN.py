@@ -287,6 +287,6 @@ if __name__ == '__main__':
     
     
 #텐서보드 extension 로드를 위한 magic command
-%load_ext tensorboard
+#%load_ext tensorboard
 #텐서보드를 로드
-%tensorboard --logdir {log_dir}
+#%tensorboard --logdir {log_dir}
