@@ -202,7 +202,8 @@ def train_HOCNN(data_file):
     #print(len(data["seq"][0][0]))
 
     my_classifier = set_convolution_layer()
-    my_classifier.fit(seq_data, y[0], epochs=20, callbacks=[tensorboard_callback])
+    my_classifier.fit(seq_data, y[0], epochs=50, callbacks=[tensorboard_callback])
+
     print(my_classifier.summary())
 
     my_classifier.save('seqcnn3_model.pkl')
