@@ -45,12 +45,12 @@ def set_convolution_layer():
     model.add(layers.Conv1D(N, k, padding='valid',input_shape = input_shape))
     model.add(layers.Activation('relu'))
     model.add(layers.MaxPooling1D(pool_size=m))
-    model.add(layers.Dropout(0.5))
+    model.add(layers.Dropout(0.9))
 
     model.add(layers.Conv1D(N, int(k/2), padding='valid'))
     model.add(layers.Activation('relu'))
     model.add(layers.MaxPooling1D(pool_size=m))
-    model.add(layers.Dropout(0.5))
+    model.add(layers.Dropout(0.25))
 
     model.add(layers.Flatten())
     model.add(layers.Dense(l, activation='relu'))
@@ -60,6 +60,8 @@ def set_convolution_layer():
     model.add(layers.Activation('softmax'))
     
     model.summary()
+    model.compile(loss='categorical_crossentropy', optimizer='rmsprop',metrics=['accuracy'])
+
     return model
 
 
@@ -79,7 +81,6 @@ def load_label_seq(seq_file):
     label_list = []
     seq = ''
 
-    #with gzip.open(seq_file, 'r') as fp:
     fp = open(seq_file,'r')
     for line in fp:
         if line[0] == '>':
@@ -196,13 +197,13 @@ def train_HOCNN(data_file):
 
     y = preprocess_labels(train_Y)
 
-    print(len(y[0]))
-    print(len(data["seq"][0][0][0]))
-    print(len(data["seq"][0][0]))
+    #print(len(y[0]))
+    #print(len(data["seq"][0][0][0]))
+    #print(len(data["seq"][0][0]))
 
     my_classifier = set_convolution_layer()
-    my_classifier.compile(loss='categorical_crossentropy', optimizer='rmsprop',metrics=['accuracy'])
-    my_classifier.fit(seq_data, y[0], batch_size=bs, epochs=100, callbacks=[tensorboard_callback])
+    my_classifier.fit(seq_data, y[0], epochs=50, callbacks=[tensorboard_callback])
+
     print(my_classifier.summary())
 
     my_classifier.save('seqcnn3_model.pkl')
@@ -250,6 +251,47 @@ def test_HOCNN(data_file):
 
     print ("acc,  sensitivity, specificity, MCC,auc : ", acc, sensitivity, specificity, MCC, roc_auc)   
 
+def KFold_validation(test_data):
+    n_split = 10
+    testdata = load_data_file(test_data, k)
+    test_y = testdata["Y"]
+    test_x = testdata["seq"][0]  # it includes one-hot encoding sequence and structure
+    my_classifier = set_convolution_layer()
+    kf = KFold(n_split, shuffle=True) 
+    cv_accuracy = []
+    cv_sensitivity = []
+    cv_specificity = []
+    cv_MCC = []
+    cv_roc_auc = []
+    n_iter = 0
+
+    for train_index,test_index in kf.split(test_x,test_y):
+        X_train , X_test = test_x[train_index], test_x[test_index]
+        Y_train , Y_test = test_y[train_index], test_y[test_index]
+        
+        print('Fold : ',n_iter)
+        Y_train = preprocess_labels(Y_train)
+        my_classifier.fit(X_train, Y_train[0], epochs=50,verbose=2)
+        
+        pred = my_classifier.predict(X_test)
+        predictions_label = transfer_label_from_prob(pred[:, 1])
+        n_iter += 1
+        
+        fpr,tpr,thresholds = roc_curve(Y_test,pred[:, 1])
+        roc_auc = auc(fpr, tpr)
+        acc, sensitivity, specificity, MCC = calculate_performance(len(Y_test), predictions_label, Y_test)
+        cv_accuracy.append(acc)
+        cv_sensitivity.append(sensitivity)
+        cv_specificity.append(specificity)
+        cv_MCC.append(MCC)
+        cv_roc_auc.append(roc_auc)
+
+    print('\naverage accuracy:{}'.format(np.mean(cv_accuracy)))
+    print('\naverage sensitivity:{}'.format(np.mean(cv_sensitivity)))
+    print('\naverage specificity:{}'.format(np.mean(cv_specificity)))
+    print('\naverage MCC:{}'.format(np.mean(cv_MCC)))
+    print('\naverage roc_auc:{}'.format(np.mean(cv_roc_auc)))
+
 def transfer_label_from_prob(proba):
     label = [0 if val <= 0.5 else 1 for val in proba]
     return label
@@ -281,9 +323,11 @@ def calculate_performance(test_num, pred_y, labels):
 if __name__ == '__main__':
     # download lncRBPdata.zip from https://github.com/NWPU-903PR/HOCNNLB
     # data_file="./RBPdata1201/01_HITSCLIP_AGO2Karginov2013a_hg19/train/1/sequence.fa.gz"  was renamed
-    train_HOCNN(data_file= "Pyfeat_FASTA.txt")
-    test_HOCNN(data_file= "Pyfeat_Independent_FASTA.txt")    #train_HOCNN(data_file= "Hocnnlb_train.txt")
+    #train_HOCNN(data_file= "Pyfeat_FASTA.txt")
+    #test_HOCNN(data_file= "Pyfeat_Independent_FASTA.txt") 
+    #train_HOCNN(data_file= "Hocnnlb_train.txt")
     #test_HOCNN(data_file = "Hocnnlb_test.txt")
+    KFold_validation(test_data= "Pyfeat_Independent_FASTA.txt")
     
     
 #텐서보드 extension 로드를 위한 magic command
