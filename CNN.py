@@ -241,7 +241,7 @@ def test_HOCNN(data_file):
         writething = "\n".join(map(str, tpr))
         f.write(writething)
 
-    acc, sensitivity, specificity, MCC = calculate_performance(len(true_y), predictions_label, true_y)
+    acc, sensitivity, specificity, MCC ,PPV , NPV= calculate_performance(len(true_y), predictions_label, true_y)
     roc_auc = auc(fpr, tpr)
 
     out_rel = ['acc', acc, 'sn', sensitivity, 'sp', specificity, 'MCC', MCC, 'auc', roc_auc]
@@ -249,7 +249,7 @@ def test_HOCNN(data_file):
         writething = "\n".join(map(str, out_rel))
         f.write(writething)
 
-    print ("acc,  sensitivity, specificity, MCC,auc : ", acc, sensitivity, specificity, MCC, roc_auc)   
+    print ("acc,  sensitivity, specificity, MCC, auc, PPV, NPV : ", acc, sensitivity, specificity, MCC, roc_auc,PPV, NPV)   
 
 def KFold_validation(test_data):
     n_split = 10
@@ -263,6 +263,8 @@ def KFold_validation(test_data):
     cv_specificity = []
     cv_MCC = []
     cv_roc_auc = []
+    cv_PPV = []
+    cv_NPV =[]
     n_iter = 0
 
     for train_index,test_index in kf.split(test_x,test_y):
@@ -285,12 +287,16 @@ def KFold_validation(test_data):
         cv_specificity.append(specificity)
         cv_MCC.append(MCC)
         cv_roc_auc.append(roc_auc)
+        cv_PPV.append(PPV)
+        cv_NPV.append(NPV)
 
     print('\naverage accuracy:{}'.format(np.mean(cv_accuracy)))
     print('\naverage sensitivity:{}'.format(np.mean(cv_sensitivity)))
     print('\naverage specificity:{}'.format(np.mean(cv_specificity)))
     print('\naverage MCC:{}'.format(np.mean(cv_MCC)))
     print('\naverage roc_auc:{}'.format(np.mean(cv_roc_auc)))
+    print('\naverage PPV:{}'.format(np.mean(cv_PPV)))
+    print('\naverage NPV:{}'.format(np.mean(cv_NPV)))
 
 def transfer_label_from_prob(proba):
     label = [0 if val <= 0.5 else 1 for val in proba]
@@ -318,7 +324,10 @@ def calculate_performance(test_num, pred_y, labels):
     sensitivity = float(tp) / (tp + fn)
     specificity = float(tn) / (tn + fp)
     MCC = float(tp * tn - fp * fn) / (np.sqrt((tp + fp) * (tp + fn) * (tn + fp) * (tn + fn)))
-    return acc,sensitivity, specificity, MCC
+    PPV = float(tp) / (tp + fp)
+    NPV = float(tn) / (tn + fn)
+
+    return acc,sensitivity, specificity, MCC, PPV,NPV
 
 if __name__ == '__main__':
     # download lncRBPdata.zip from https://github.com/NWPU-903PR/HOCNNLB
