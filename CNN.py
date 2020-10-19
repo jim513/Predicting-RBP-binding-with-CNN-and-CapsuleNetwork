@@ -45,7 +45,7 @@ def set_convolution_layer():
     model.add(layers.Conv1D(N, k, padding='valid',input_shape = input_shape))
     model.add(layers.Activation('relu'))
     model.add(layers.MaxPooling1D(pool_size=m))
-    model.add(layers.Dropout(0.9))
+    model.add(layers.Dropout(0.5))
 
     model.add(layers.Conv1D(N, int(k/2), padding='valid'))
     model.add(layers.Activation('relu'))
