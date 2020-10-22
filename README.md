@@ -1,5 +1,4 @@
-# Predicting-RBP-binding-with-CNN-Capsnet-
-
+# Predicting-RBP-binding-with-CNN
 
 # Dependency
 Linux
