@@ -18,6 +18,14 @@ from tensorflow.keras.callbacks import ModelCheckpoint
 import math
 import gzip
 
+filename = ['00_PAI244','01_HITSCLIP_AGO2Karginov2013a_hg19', '02_HITSCLIP_AGO2Karginov2013c_hg19',
+'03_HITSCLIP_AGO2Karginov2013b_hg19','04_HITSCLIP_AGO2Karginov2013d_hg19','05_HITSCLIP_AGO2Karginov2013f_hg19',
+'06_HITSCLIP_AGO2Karginov2013e_hg19','07_PARCLIP_AGO2Gottwein2011a_hg19','08_PARCLIP_AGO2Gottwein2011b_hg19','09_PARCLIP_AGO2Skalsky2012a_hg19','10_PARCLIP_AGO2Skalsky2012b_hg19',
+'11_PARCLIP_AGO2Skalsky2012e_hg19', '12_HITSCLIP_DGCR8Macias2012d_hg19','13_HITSCLIP_DGCR8Macias2012c_hg19','14_HITSCLIP_DGCR8Macias2012a_hg19','15_HITSCLIP_DGCR8Macias2012b_hg19',
+'16_HITSCLIP_EIF4A3Sauliere2012a_hg19','17_HITSCLIP_EIF4A3Sauliere2012b_hg19','18_HITSCLIP_EWSR1Paronetto2014_hg19','19_PARCLIP_FMR1_Ascano2012b_hg19','20_PARCLIP_FMR1_Ascano2012a_hg19',
+'21_PARCLIP_FMR1_Ascano2012c_hg19','22_HITSCLIP_FUSNakaya2013c_hg19','23_HITSCLIP_FUSNakaya2013d_hg19','24_HITSCLIP_FUSNakaya2013e_hg19','25_PARCLIP_HuR_mukherjee2011_hg19',
+'26_PARCLIP_IGF2BP123_Hafner2010d_hg19','27_PARCLIP_RBM10Wang2013a_hg19','28_PARCLIP_RBM10Wang2013b_hg19','29_iCLIP_TDP-43_tollervey2011_hg19','30_iCLIP_TIAL1_wang2010b_hg19',
+'31_PARCLIP_ZC3H7B_Baltz2012e_hg19']
 number = '1'
 bs=512
 N=16
@@ -38,8 +46,8 @@ log_dir = "logs/my_board/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
 tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=1)
 
 def set_convolution_layer():
-    #input_shape = (98+k , 256) #Using Hocnnlb data
-    input_shape = (48+k , 256)  #Using Pyfeat data
+    input_shape = (98+k , 256) #Using Hocnnlb data , filename[1~31]
+    #input_shape = (48+k , 256)  #Using Pyfeat data , filename[0]
 
     model = models.Sequential()
     model.add(layers.Conv1D(N, k, padding='valid',input_shape = input_shape))
@@ -213,6 +221,8 @@ def test_HOCNN(data_file):
     fprfile = 'HOCNNLB/fpr.txt'
     tprfile = 'HOCNNLB/tpr.txt'
     metricsfile = 'HOCNNLB/metrics_file.txt'
+    positivefile = 'Positive_sequence.txt'
+    negativefile = 'Negative_sequence.txt'
     if not os.path.exists('HOCNNLB/'):
         os.makedirs('HOCNNLB/')
 
@@ -226,6 +236,14 @@ def test_HOCNN(data_file):
     
     predictions = model.predict(testing)
     predictions_label = transfer_label_from_prob(predictions[:, 1])
+    pos, neg =classify_with_predict_label(predictions_label,data_file)
+
+    with open(positivefile, 'w') as f:
+        writething = "\n".join(map(str, pos))
+        f.write(writething)
+    with open(negativefile, 'w') as f:
+        writething = "\n".join(map(str, neg))
+        f.write(writething)
 
     fw = open(outfile, 'w')
     myprob = "\n".join(map(str, predictions[:, 1]))
@@ -297,6 +315,8 @@ def KFold_validation(test_data):
     print('\naverage roc_auc:{}'.format(np.mean(cv_roc_auc)))
     print('\naverage PPV:{}'.format(np.mean(cv_PPV)))
     print('\naverage NPV:{}'.format(np.mean(cv_NPV)))
+    
+    my_classifier.save('seqcnn3_model.pkl')
 
 def transfer_label_from_prob(proba):
     label = [0 if val <= 0.5 else 1 for val in proba]
@@ -328,15 +348,32 @@ def calculate_performance(test_num, pred_y, labels):
     NPV = float(tn) / (tn + fn)
 
     return acc,sensitivity, specificity, MCC, PPV,NPV
+    
+def classify_with_predict_label(label, data_file):
+    
+    positive_seq = []
+    negative_seq = []
+    fp = open(data_file,'r')
+    cnt = 0
+    for line in fp:
+        if line[0] == '>':
+            continue
+        else:
+            if label[cnt] == 1:
+                positive_seq.append(line)
+            else :
+                negative_seq.append(line)
+            cnt = cnt +1 
+
+    return positive_seq, negative_seq
 
 if __name__ == '__main__':
     # download lncRBPdata.zip from https://github.com/NWPU-903PR/HOCNNLB
     # data_file="./RBPdata1201/01_HITSCLIP_AGO2Karginov2013a_hg19/train/1/sequence.fa.gz"  was renamed
-    #train_HOCNN(data_file= "Pyfeat_FASTA.txt")
-    #test_HOCNN(data_file= "Pyfeat_Independent_FASTA.txt") 
-    #train_HOCNN(data_file= "Hocnnlb_train.txt")
-    #test_HOCNN(data_file = "Hocnnlb_test.txt")
-    KFold_validation(test_data= "Pyfeat_Independent_FASTA.txt")
+    train_HOCNN(data_file= "Datasets/%s/train/%s/sequence.fa"%(filename[1],number))
+    test_HOCNN(data_file= "Datasets/%s/test/%s/sequence.fa"%(filename[1],number))
+
+    #KFold_validation(test_data= "Datasets/%s/train/%s/sequence.fa"%(filename[1],number))
     
     
 #텐서보드 extension 로드를 위한 magic command
