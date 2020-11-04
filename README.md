@@ -14,3 +14,5 @@ numpy==1.19.1
 scikit-learn=0.19.0
 
 scipy=1.5.2
+
+meme = 5.2.0
