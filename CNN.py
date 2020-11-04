@@ -351,17 +351,21 @@ def calculate_performance(test_num, pred_y, labels):
     
 def classify_with_predict_label(label, data_file):
     
-    positive_seq = []
+   positive_seq = []
     negative_seq = []
     fp = open(data_file,'r')
     cnt = 0
+    seq_id = ''
     for line in fp:
         if line[0] == '>':
-            continue
+            seq_id= line[0:-1]
         else:
+            line = line[0:-1]
             if label[cnt] == 1:
+                positive_seq.append(seq_id)
                 positive_seq.append(line)
             else :
+                negative_seq.append(seq_id)
                 negative_seq.append(line)
             cnt = cnt +1 
 
