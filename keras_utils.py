@@ -143,7 +143,7 @@ class Capsule(Layer):
             b = K.permute_dimensions(b, (0, 2, 1))
             outputs = self.activation(K.batch_dot(c, u_hat_vecs, [2, 2]))
             if i < self.routings - 1:
-                b = K.batch_dot(outputs, u_hat_vecs, (2,3))
+                b = K.batch_dot(outputs, u_hat_vecs, [2,3])
                 #b= tf.matmul(outputs,u_hat_vecs)
                 #b=tf.einsum('ijk,lm->ikl', outputs, u_hat_vecs)
 
