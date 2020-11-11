@@ -18,6 +18,7 @@ from tensorflow.keras.callbacks import ModelCheckpoint
 import math
 import gzip
 
+
 filename = ['00_PAI244','01_HITSCLIP_AGO2Karginov2013a_hg19', '02_HITSCLIP_AGO2Karginov2013c_hg19',
 '03_HITSCLIP_AGO2Karginov2013b_hg19','04_HITSCLIP_AGO2Karginov2013d_hg19','05_HITSCLIP_AGO2Karginov2013f_hg19',
 '06_HITSCLIP_AGO2Karginov2013e_hg19','07_PARCLIP_AGO2Gottwein2011a_hg19','08_PARCLIP_AGO2Gottwein2011b_hg19','09_PARCLIP_AGO2Skalsky2012a_hg19','10_PARCLIP_AGO2Skalsky2012b_hg19',
@@ -32,7 +33,6 @@ N=16
 k=20
 m=3
 l=8
-
 # bs = batch_size
 # N = filter number
 # k = filter size , motif_size
@@ -47,7 +47,7 @@ tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram
 
 def set_convolution_layer():
     input_shape = (98+k , 256) #Using Hocnnlb data , filename[1~31]
-    #input_shape = (48+k , 256)  #Using Pyfeat data , filename[0]
+    #input_shape = (48+k , 256)  #Using Pyfeat data,filename[0]
 
     model = models.Sequential()
     model.add(layers.Conv1D(N, k, padding='valid',input_shape = input_shape))
@@ -109,7 +109,6 @@ def read_seq(seq_file,k):
  
     fp = open(seq_file,'r')
     for line in fp:
-
         if line[0] == '>':
             name = line[1:-1]
             if len(seq):
@@ -123,13 +122,14 @@ def read_seq(seq_file,k):
         seqdata = GetSeqDegree(seq.upper(), degree,k)
         seq_array = embed(seqdata, encoder)
         seq_list.append(seq_array)
-   
+
     return np.array(seq_list)
 
 def buildseqmapper(degree):
     length = degree
-    #alphabet = ['A', 'C', 'G', 'T']  #Using Hocnnlb data
-    alphabet = ['A', 'C', 'G', 'U'] #Using Pypeat data
+    alphabet = ['A', 'C', 'G', 'T']  #Using Hocnnlb data
+    #alphabet = ['A', 'C', 'G', 'U'] #Using Pypeat data
+    #alphabet = ['S','H','M','I','B','X','E'] 
     mapper = ['']
     while length > 0:
         mapper_len = len(mapper)
@@ -181,7 +181,6 @@ def embed(seq, mapper):
             mat.append(mapper.get("N"))
         else:
             print (element,"wrong")
-
     return np.asarray(mat)
 
 
@@ -205,14 +204,13 @@ def train_HOCNN(data_file):
 
     y = preprocess_labels(train_Y)
 
-    #print(len(y[0]))
-    #print(len(data["seq"][0][0][0]))
-    #print(len(data["seq"][0][0]))
-
+    #print(len(seq_data))
+    #print(len(seq_data[0]))
+    #print(len(seq_data[0][0]))
+    #print(np.shape(seq_data))
     my_classifier = set_convolution_layer()
     my_classifier.fit(seq_data, y[0], epochs=50, callbacks=[tensorboard_callback])
-
-    print(my_classifier.summary())
+    #print(my_classifier.summary())
 
     my_classifier.save('seqcnn3_model.pkl')
 
@@ -236,15 +234,14 @@ def test_HOCNN(data_file):
     
     predictions = model.predict(testing)
     predictions_label = transfer_label_from_prob(predictions[:, 1])
-    pos, neg =classify_with_predict_label(predictions_label,data_file)
-
+    pos, neg =classify_with_predict_label(predictions_label,data_file )
+    #print(pos,neg)
     with open(positivefile, 'w') as f:
         writething = "\n".join(map(str, pos))
         f.write(writething)
     with open(negativefile, 'w') as f:
         writething = "\n".join(map(str, neg))
         f.write(writething)
-
     fw = open(outfile, 'w')
     myprob = "\n".join(map(str, predictions[:, 1]))
     # fw.write(mylabel + '\n')
@@ -259,15 +256,16 @@ def test_HOCNN(data_file):
         writething = "\n".join(map(str, tpr))
         f.write(writething)
 
-    acc, sensitivity, specificity, MCC ,PPV , NPV= calculate_performance(len(true_y), predictions_label, true_y)
+    acc, sensitivity, specificity, MCC ,PPV , NPV = calculate_performance(len(true_y), predictions_label, true_y)
+    #print(np.mean(fpr) , np.mean(tpr))
     roc_auc = auc(fpr, tpr)
 
-    out_rel = ['acc', acc, 'sn', sensitivity, 'sp', specificity, 'MCC', MCC, 'auc', roc_auc]
+    out_rel = ['acc', acc, 'sn', sensitivity, 'sp', specificity, 'MCC', MCC, 'auc', roc_auc ,'PPV', PPV , 'NPV',NPV]
     with open(metricsfile, 'w') as f:
         writething = "\n".join(map(str, out_rel))
         f.write(writething)
 
-    print ("acc,  sensitivity, specificity, MCC, auc, PPV, NPV : ", acc, sensitivity, specificity, MCC, roc_auc,PPV, NPV)   
+    print ("acc,  sensitivity, specificity, PPV, NPV, MCC, auc : ", acc, sensitivity, specificity, PPV, NPV, MCC, roc_auc)   
 
 def KFold_validation(test_data):
     n_split = 10
@@ -285,13 +283,18 @@ def KFold_validation(test_data):
     cv_NPV =[]
     n_iter = 0
 
+   
     for train_index,test_index in kf.split(test_x,test_y):
         X_train , X_test = test_x[train_index], test_x[test_index]
         Y_train , Y_test = test_y[train_index], test_y[test_index]
         
+        # 학습데이터의 log를 저장할 폴더 생성 (지정)
+        log_dir = "logs/my_board/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+        #텐서보드 콜백 정의 하기
+        tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=1)
         print('Fold : ',n_iter)
         Y_train = preprocess_labels(Y_train)
-        my_classifier.fit(X_train, Y_train[0], epochs=50,verbose=2)
+        my_classifier.fit(X_train, Y_train[0], epochs=20,verbose=2, callbacks=[tensorboard_callback])
         
         pred = my_classifier.predict(X_test)
         predictions_label = transfer_label_from_prob(pred[:, 1])
@@ -299,7 +302,7 @@ def KFold_validation(test_data):
         
         fpr,tpr,thresholds = roc_curve(Y_test,pred[:, 1])
         roc_auc = auc(fpr, tpr)
-        acc, sensitivity, specificity, MCC = calculate_performance(len(Y_test), predictions_label, Y_test)
+        acc, sensitivity, specificity, MCC , PPV , NPV = calculate_performance(len(Y_test), predictions_label, Y_test)
         cv_accuracy.append(acc)
         cv_sensitivity.append(sensitivity)
         cv_specificity.append(specificity)
@@ -346,12 +349,11 @@ def calculate_performance(test_num, pred_y, labels):
     MCC = float(tp * tn - fp * fn) / (np.sqrt((tp + fp) * (tp + fn) * (tn + fp) * (tn + fn)))
     PPV = float(tp) / (tp + fp)
     NPV = float(tn) / (tn + fn)
-
     return acc,sensitivity, specificity, MCC, PPV,NPV
-    
+
 def classify_with_predict_label(label, data_file):
     
-   positive_seq = []
+    positive_seq = []
     negative_seq = []
     fp = open(data_file,'r')
     cnt = 0
@@ -374,13 +376,14 @@ def classify_with_predict_label(label, data_file):
 if __name__ == '__main__':
     # download lncRBPdata.zip from https://github.com/NWPU-903PR/HOCNNLB
     # data_file="./RBPdata1201/01_HITSCLIP_AGO2Karginov2013a_hg19/train/1/sequence.fa.gz"  was renamed
-    train_HOCNN(data_file= "Datasets/%s/train/%s/sequence.fa"%(filename[1],number))
-    test_HOCNN(data_file= "Datasets/%s/test/%s/sequence.fa"%(filename[1],number))
 
-    #KFold_validation(test_data= "Datasets/%s/train/%s/sequence.fa"%(filename[1],number))
+    train_HOCNN(data_file= "Datasets/%s/train/%s/sequence.fa"%(filename[25],number))
+    test_HOCNN(data_file = "Datasets/%s/test/%s/sequence.fa"%(filename[25],number))
+    #KFold_validation(test_data = "Datasets/%s/test/%s/sequence.fa"%(filename[25],number))
     
     
 #텐서보드 extension 로드를 위한 magic command
 #%load_ext tensorboard
 #텐서보드를 로드
 #%tensorboard --logdir {log_dir}
+#tensorboard --logdir logs

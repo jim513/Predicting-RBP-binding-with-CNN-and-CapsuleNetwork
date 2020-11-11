@@ -23,7 +23,7 @@ import datetime
 np.random.seed(0)
 np.set_printoptions(threshold=np.inf)
 batch_size = 32
-num_epochs =30
+num_epochs =50
 max_len1=97
 max_features = 100
 DNAelements = 'ACGT'
@@ -92,8 +92,7 @@ def zCurve(x, seqType):
             T.append(x_); T.append(y_); T.append(z_) 
         return T   
                   
-def calculate_auc(net_one,x1,model_input1, x_train, y_train ,x_test, y_test, model_name = None):
-    model = run_network(net_one,x1,model_input1, x_train, y_train ,x_test, y_test)
+def calculate_auc(net_one,x1,model_input1, x_train, y_train , model_name = None):
     #pdb.set_trace()
 #    auc = roc_auc_score(y_test, predict)
 #    print ("Test AUC: ", auc)
@@ -295,13 +294,13 @@ def kmers(seq, k):
         return v
 
 def read_seq_new(seq_file,k):
-    degree = 4
+    degree = 5
     seq_list = []
     seq_totallist = []
     seq = ''
     for line in  SeqIO.parse(seq_file,"fasta"):
        seq=str(line.seq)   
-       kemerseq=kmers(seq,4)
+       kemerseq=kmers(seq,5)
        encoder = buildseqmapper(degree,kemerseq)
        seqdata = GetSeqDegree(seq.upper(),degree,k)
        seq_array = embed(seqdata,encoder)
@@ -341,8 +340,8 @@ def get_cnn_network_one(maxlen):
     print ('configure cnn network')
 
     model = Sequential()
-    #input_shape=(maxlen,1024)
-    input_shape=(maxlen,256)
+    input_shape=(maxlen,1024)
+    #input_shape=(maxlen,256)
     model_input = Input(shape=input_shape)
     #x=Conv1D(nb_filter=64,  
     #                    filter_length=14,
@@ -369,11 +368,13 @@ def read_rna_dict():
                 odr_dict[val] = ind
     return odr_dict     
 
-def run_network(net_one,x1,model_input1, x_train, y_train ,x_test, y_test):
+def run_network(net_one,x1,model_input1, x_train, y_train ):
     MODEL_PATH='./'
+    
     filepath = os.path.join(MODEL_PATH,'my_net_model.h5')
     if not os.path.exists(MODEL_PATH): 
         os.makedirs(MODEL_PATH) 
+
     model_output = Dense(2, activation="softmax")(x1)
     adam = Adam(lr=0.001)
     model=Model(inputs=model_input1, outputs=model_output)
@@ -407,25 +408,20 @@ def run_network(net_one,x1,model_input1, x_train, y_train ,x_test, y_test):
     model.save(filepath)
     return  model
 
-def run_caps(data_file):
+def train_caps(data_file):
+    
     print("Load data...")
-    number=1
     x_train, y_train,encoder1= load_data(data_file)
     #print("x_dev shape:", x_dev.shape)
 
-    print("Load test data...")
-    x_test, y_test= load_test_data(data_file)
-    print("x_test shape:", x_test.shape)
     x_train=x_train.reshape((x_train.shape[0],x_train.shape[1],x_train.shape[2]))
-    x_test=x_test.reshape((x_test.shape[0],x_test.shape[1],x_test.shape[2]))
 
     net_one,x1,model_input1= get_cnn_network_one(max_len1 )
-    mymodel= calculate_auc(net_one,x1,model_input1, x_train, y_train ,x_test, y_test)
-    
-    model = load_model('my_net_model.h5',custom_objects={'Capsule': Capsule})
-    
-    test_predictions = model.predict(x_test,verbose=1)
+    model = run_network(net_one,x1,model_input1, x_train, y_train )
 
+   
+
+def test_caps(data_file):
     outfile='Caps/prediction.txt'
     fprfile='Caps/fpr_file.txt'
     tprfile='Caps/tpr_file.txt'
@@ -434,6 +430,15 @@ def run_caps(data_file):
     negativefile = 'Negative_sequence.txt'
     if not os.path.exists('Caps/'):
         os.makedirs('Caps/')
+
+    print("Load test data...")
+    x_test, y_test= load_test_data(data_file)
+    print("x_test shape:", x_test.shape)
+    x_test= x_test.reshape((x_test.shape[0],x_test.shape[1],x_test.shape[2]))
+
+    model = load_model('my_net_model.h5',custom_objects={'Capsule': Capsule})
+    
+    test_predictions = model.predict(x_test,verbose=1)
 
     predictions_label = transfer_label_from_prob(test_predictions[:, 1])
     pos, neg =classify_with_predict_label(predictions_label,data_file )
@@ -492,5 +497,5 @@ def classify_with_predict_label(label, data_file):
     return positive_seq, negative_seq
 
 if __name__ == "__main__":
-    run_caps(data_file= "Datasets/%s/train/%s/sequence.fa"%(filename[25],number))
-   
+    train_caps(data_file= "Datasets/%s/train/%s/sequence.fa"%(filename[25],number))
+    test_caps(data_file= "Datasets/%s/test/%s/sequence.fa"%(filename[25],number))

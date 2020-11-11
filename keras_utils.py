@@ -136,15 +136,14 @@ class Capsule(Layer):
         u_hat_vecs = K.permute_dimensions(u_hat_vecs, (0, 2, 1, 3))
 
         b = K.zeros_like(u_hat_vecs[:, :, :, 0])  # shape = [None, num_capsule, input_num_capsule]
-        print(u_hat_vecs.shape)
         for i in range(self.routings):
             b = K.permute_dimensions(b, (0, 2, 1))  # shape = [None, input_num_capsule, num_capsule]
             c = K.softmax(b)
             c = K.permute_dimensions(c, (0, 2, 1))
             b = K.permute_dimensions(b, (0, 2, 1))
             outputs = self.activation(K.batch_dot(c, u_hat_vecs, [2, 2]))
-            #if i < self.routings - 1:
-                #b = K.batch_dot(outputs, u_hat_vecs, (2,3))
+            if i < self.routings - 1:
+                b = K.batch_dot(outputs, u_hat_vecs, (2,3))
                 #b= tf.matmul(outputs,u_hat_vecs)
                 #b=tf.einsum('ijk,lm->ikl', outputs, u_hat_vecs)
 
