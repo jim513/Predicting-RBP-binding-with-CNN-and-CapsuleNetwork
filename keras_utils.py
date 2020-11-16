@@ -5,11 +5,14 @@ import tensorflow.keras.backend as K
 from tensorflow.keras import initializers, regularizers, constraints
 #from keras.engine.topology import Layer
 
-from tensorflow.keras.layers import Activation,Layer
+from tensorflow.keras.layers import Activation,Layer,Softmax
 #from tensorflow.keras import Layer
 #from keras.engine import Layer
 import tensorflow as tf
 ### Avoid warning ###
+from tensorflow.python.ops import array_ops
+from tensorflow.python.ops import math_ops
+
 import warnings
 def warn(*args, **kwargs): pass
 warnings.warn = warn
@@ -128,25 +131,32 @@ class Capsule(Layer):
             u_hat_vecs = K.conv1d(u_vecs, self.W)
         else:
             u_hat_vecs = K.local_conv1d(u_vecs, self.W, [1], [1])
-
         batch_size = K.shape(u_vecs)[0]
         input_num_capsule = K.shape(u_vecs)[1]
         u_hat_vecs = K.reshape(u_hat_vecs, (batch_size, input_num_capsule,
                                             self.num_capsule, self.dim_capsule))
-        u_hat_vecs = K.permute_dimensions(u_hat_vecs, (0, 2, 1, 3))
+        
+        u_hat_vecs = K.permute_dimensions(u_hat_vecs, (0, 2, 1, 3)) #origin 0 ,2 ,1 ,3
 
         b = K.zeros_like(u_hat_vecs[:, :, :, 0])  # shape = [None, num_capsule, input_num_capsule]
+
         for i in range(self.routings):
             b = K.permute_dimensions(b, (0, 2, 1))  # shape = [None, input_num_capsule, num_capsule]
             c = K.softmax(b)
             c = K.permute_dimensions(c, (0, 2, 1))
             b = K.permute_dimensions(b, (0, 2, 1))
-            outputs = self.activation(K.batch_dot(c, u_hat_vecs, [2, 2]))
-            if i < self.routings - 1:
-                b = K.batch_dot(outputs, u_hat_vecs, (2,3))
-                #b= tf.matmul(outputs,u_hat_vecs)
-                #b=tf.einsum('ijk,lm->ikl', outputs, u_hat_vecs)
+            outputs = self.activation(batch_dot(c, u_hat_vecs, [2, 2]))
 
+            if i < self.routings - 1:
+                #print("==================================================")
+                #print("i = ",i)
+                #print("before : ", b)
+                b = batch_dot(outputs, u_hat_vecs, [2,3] )
+                #print(outputs)
+                #print(u_hat_vecs)
+                #print(b)
+                #print("==================================================")
+             
         return outputs
 
     def compute_output_shape(self, input_shape):
@@ -452,3 +462,53 @@ def tokenize(text_train, text_test, num_words=200000, maxlen=100):
     X_tr = pad_sequences(tokenized_train, maxlen=maxlen)
     X_te = pad_sequences(tokenized_test, maxlen=maxlen)
     return X_tr, X_te
+
+
+def batch_dot(x, y, axes=None):
+    if isinstance(axes, int):
+        axes = (axes, axes)
+    x_ndim = ndim(x)
+    y_ndim = ndim(y)
+    if axes is None:
+        # behaves like tf.batch_matmul as default
+        axes = [x_ndim - 1, y_ndim - 2]
+    if x_ndim > y_ndim:
+        diff = x_ndim - y_ndim
+        y = array_ops.reshape(y,
+                          array_ops.concat(
+                              [array_ops.shape(y), [1] * (diff)], axis=0))
+    elif y_ndim > x_ndim:
+        diff = y_ndim - x_ndim
+        x = array_ops.reshape(x,
+                          array_ops.concat(
+                              [array_ops.shape(x), [1] * (diff)], axis=0))
+    else:
+        diff = 0
+    if ndim(x) == 2 and ndim(y) == 2:
+        if axes[0] == axes[1]:
+            out = math_ops.reduce_sum(math_ops.multiply(x, y), axes[0])
+        else:
+            out = math_ops.reduce_sum(math_ops.multiply(array_ops.transpose(x, [1, 0]), y), axes[1])
+    else:
+        adj_x = None if axes[0] == ndim(x) - 1 else True
+        adj_y = True if axes[1] == ndim(y) - 1 else None
+        out = math_ops.matmul(x, y, adjoint_a=adj_x, adjoint_b=adj_y)
+    if diff:
+        if x_ndim > y_ndim:
+            idx = x_ndim + y_ndim - 3
+        else:
+            idx = x_ndim - 1
+        out = array_ops.squeeze(out, list(range(idx, idx + diff)))
+    if ndim(out) == 1:
+        out = expand_dims(out, 1)
+    return out
+
+
+def expand_dims(x, axis=-1):
+    return array_ops.expand_dims(x, axis)
+
+def ndim(x):
+    dims = x.shape._dims
+    if dims is not None:
+        return len(dims)
+    return None

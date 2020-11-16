@@ -23,8 +23,8 @@ import datetime
 np.random.seed(0)
 np.set_printoptions(threshold=np.inf)
 batch_size = 32
-num_epochs =50
-max_len1=97
+num_epochs = 30
+max_len1=98
 max_features = 100
 DNAelements = 'ACGT'
 RNAelements = 'ACGU'
@@ -268,6 +268,7 @@ def GetSeqDegree(seq, degree,motif_len):
 def buildseqmapper(degree,kemerseq):
     length = degree
     alphabet = ['A', 'C', 'G', 'T']
+    #alphabet = ['A', 'C', 'G', 'U']
     mapper = [''] 
     while length > 0:
         mapper_len = len(mapper)
