@@ -10,13 +10,18 @@ import pandas as pd
 import numpy as np
 import tensorflow as tf
 from tensorflow.keras import datasets, layers, models
+#from keras import datasets, layers, models
+
 from sklearn.model_selection import KFold
 from sklearn.metrics import roc_curve, auc
 from keras.models import load_model
 from tensorflow.keras.callbacks import ModelCheckpoint
+#from keras.callbacks import ModelCheckpoint
 
 import math
 import gzip
+
+import matplotlib.pyplot as plt
 
 
 filename = ['00_PAI244','01_HITSCLIP_AGO2Karginov2013a_hg19', '02_HITSCLIP_AGO2Karginov2013c_hg19',
@@ -27,8 +32,9 @@ filename = ['00_PAI244','01_HITSCLIP_AGO2Karginov2013a_hg19', '02_HITSCLIP_AGO2K
 '21_PARCLIP_FMR1_Ascano2012c_hg19','22_HITSCLIP_FUSNakaya2013c_hg19','23_HITSCLIP_FUSNakaya2013d_hg19','24_HITSCLIP_FUSNakaya2013e_hg19','25_PARCLIP_HuR_mukherjee2011_hg19',
 '26_PARCLIP_IGF2BP123_Hafner2010d_hg19','27_PARCLIP_RBM10Wang2013a_hg19','28_PARCLIP_RBM10Wang2013b_hg19','29_iCLIP_TDP-43_tollervey2011_hg19','30_iCLIP_TIAL1_wang2010b_hg19',
 '31_PARCLIP_ZC3H7B_Baltz2012e_hg19']
+
 number = '1'
-bs=512
+bs= 32
 N=16
 k=20
 m=3
@@ -44,6 +50,10 @@ import datetime
 log_dir = "logs/my_board/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
 # 텐서보드 콜백 정의 하기
 tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=1)
+
+from  numpy.random import seed
+seed(1)
+tf.random.set_seed(3)
 
 def set_convolution_layer():
     input_shape = (98+k , 256) #Using Hocnnlb data , filename[1~31]
@@ -209,10 +219,10 @@ def train_HOCNN(data_file):
     #print(len(seq_data[0][0]))
     #print(np.shape(seq_data))
     my_classifier = set_convolution_layer()
-    my_classifier.fit(seq_data, y[0], epochs=50, callbacks=[tensorboard_callback])
+    my_classifier.fit(seq_data, y[0], epochs=50, batch_size = bs, callbacks=[tensorboard_callback])
     #print(my_classifier.summary())
 
-    my_classifier.save('seqcnn3_model.pkl')
+    my_classifier.save('HOCNNLB/seqcnn3_model.pkl')
 
 def test_HOCNN(data_file):
     outfile = 'HOCNNLB/prediction.txt'
@@ -230,7 +240,7 @@ def test_HOCNN(data_file):
     true_y = data["Y"]
 
     testing = data["seq"][0]  # it includes one-hot encoding sequence and structure
-    model = load_model('seqcnn3_model.pkl')
+    model = load_model('HOCNNLB/seqcnn3_model.pkl')
     
     predictions = model.predict(testing)
     predictions_label = transfer_label_from_prob(predictions[:, 1])
@@ -264,8 +274,22 @@ def test_HOCNN(data_file):
     with open(metricsfile, 'w') as f:
         writething = "\n".join(map(str, out_rel))
         f.write(writething)
+    
+    print("ACC——%.4f" %acc)       
+    print("sensitivity——%.4f" %sensitivity )       
+    print("specificity——%.4f "%specificity )      
+    print("PPV——%.4f " %PPV)       
+    print("NPV——%.4f " %NPV)       
+    print("MCC——%.4f " %MCC)       
+    print("roc_auc——%.4f" %roc_auc)    
+    
+    plt.plot(
+            fpr,
+            tpr,
+            linestyle='-',
+            label='{} ({:0.3f})'.format("AUC_CAPs", roc_auc), lw=2.0)
 
-    print ("acc,  sensitivity, specificity, PPV, NPV, MCC, auc : ", acc, sensitivity, specificity, PPV, NPV, MCC, roc_auc)   
+    auROCplot()
 
 def KFold_validation(test_data):
     n_split = 10
@@ -373,15 +397,26 @@ def classify_with_predict_label(label, data_file):
 
     return positive_seq, negative_seq
 
+def auROCplot():
+    ### auROC ###
+    plt.plot([0, 1], [0, 1], linestyle='--', lw=2, color='k', label='Random')
+    plt.xlim([-0.05, 1.05])
+    plt.ylim([-0.05, 1.05])
+    plt.xlabel('False Positive Rate (FPR)', fontsize=12, fontweight='bold')
+    plt.ylabel('True Positive Rate (TPR)', fontsize=12, fontweight='bold')
+    plt.title('CNN Receiver Operating Characteristic (ROC)')
+    plt.legend(loc='lower right')
+    plt.savefig('auROC.png', dpi=300)
+    plt.show()
+    ### --- ###
+
 if __name__ == '__main__':
     # download lncRBPdata.zip from https://github.com/NWPU-903PR/HOCNNLB
     # data_file="./RBPdata1201/01_HITSCLIP_AGO2Karginov2013a_hg19/train/1/sequence.fa.gz"  was renamed
+    train_HOCNN(data_file= "Datasets/%s/train/%s/sequence.fa"%(filename[16],number))
+    test_HOCNN(data_file= "Datasets/%s/test/%s/sequence.fa"%(filename[16],number))
+  
 
-    train_HOCNN(data_file= "Datasets/%s/train/%s/sequence.fa"%(filename[25],number))
-    test_HOCNN(data_file = "Datasets/%s/test/%s/sequence.fa"%(filename[25],number))
-    #KFold_validation(test_data = "Datasets/%s/test/%s/sequence.fa"%(filename[25],number))
-    
-    
 #텐서보드 extension 로드를 위한 magic command
 #%load_ext tensorboard
 #텐서보드를 로드
