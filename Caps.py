@@ -1,3 +1,10 @@
+### Avoid warning ###
+import warnings
+def warn(*args, **kwargs): pass
+warnings.warn = warn
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+
 # -*- coding: utf-8 -*-
 from tensorflow.keras.optimizers import Adam,SGD,RMSprop
 from sklearn.metrics import roc_curve, auc, roc_auc_score
@@ -21,14 +28,19 @@ from keras import utils as np_utils
 import datetime
 
 np.random.seed(0)
+from tensorflow.random import set_seed
+set_seed(1)
 np.set_printoptions(threshold=np.inf)
+
+import matplotlib.pyplot as plt
+
+
 batch_size = 32
 num_epochs = 30
-max_len1=98
+max_len1=97
 max_features = 100
 DNAelements = 'ACGT'
 RNAelements = 'ACGU'
-
 
 filename = ['00_PAI244','01_HITSCLIP_AGO2Karginov2013a_hg19', '02_HITSCLIP_AGO2Karginov2013c_hg19',
 '03_HITSCLIP_AGO2Karginov2013b_hg19','04_HITSCLIP_AGO2Karginov2013d_hg19','05_HITSCLIP_AGO2Karginov2013f_hg19',
@@ -38,6 +50,7 @@ filename = ['00_PAI244','01_HITSCLIP_AGO2Karginov2013a_hg19', '02_HITSCLIP_AGO2K
 '21_PARCLIP_FMR1_Ascano2012c_hg19','22_HITSCLIP_FUSNakaya2013c_hg19','23_HITSCLIP_FUSNakaya2013d_hg19','24_HITSCLIP_FUSNakaya2013e_hg19','25_PARCLIP_HuR_mukherjee2011_hg19',
 '26_PARCLIP_IGF2BP123_Hafner2010d_hg19','27_PARCLIP_RBM10Wang2013a_hg19','28_PARCLIP_RBM10Wang2013b_hg19','29_iCLIP_TDP-43_tollervey2011_hg19','30_iCLIP_TIAL1_wang2010b_hg19',
 '31_PARCLIP_ZC3H7B_Baltz2012e_hg19']
+
 number = '1'
 
 def pseudoKNC(x, k):
@@ -370,8 +383,8 @@ def read_rna_dict():
     return odr_dict     
 
 def run_network(net_one,x1,model_input1, x_train, y_train ):
-    MODEL_PATH='./'
-    
+    #MODEL_PATH='./'
+    MODEL_PATH='Caps/'
     filepath = os.path.join(MODEL_PATH,'my_net_model.h5')
     if not os.path.exists(MODEL_PATH): 
         os.makedirs(MODEL_PATH) 
@@ -437,13 +450,20 @@ def test_caps(data_file):
     print("x_test shape:", x_test.shape)
     x_test= x_test.reshape((x_test.shape[0],x_test.shape[1],x_test.shape[2]))
 
-    model = load_model('my_net_model.h5',custom_objects={'Capsule': Capsule})
+    model = load_model('Caps/my_net_model.h5',custom_objects={'Capsule': Capsule})
     
     test_predictions = model.predict(x_test,verbose=1)
 
     predictions_label = transfer_label_from_prob(test_predictions[:, 1])
     pos, neg =classify_with_predict_label(predictions_label,data_file )
-
+    
+    with open(positivefile, 'w') as f:
+        writething = "\n".join(map(str, pos))
+        f.write(writething)
+    with open(negativefile, 'w') as f:
+        writething = "\n".join(map(str, neg))
+        f.write(writething)
+    
     fw = open(outfile, 'w')
     myprob = "\n".join(map(str, test_predictions))
     fw.write(myprob)
@@ -474,6 +494,14 @@ def test_caps(data_file):
     print("NPV——%.4f " %NPV)       
     print("MCC——%.4f " %MCC)       
     print("roc_auc——%.4f" %roc_auc)       
+    
+    plt.plot(
+            fpr,
+            tpr,
+            linestyle='-',
+            label='{} ({:0.3f})'.format("AUC_CNN", roc_auc), lw=2.0)
+
+    auROCplot()
 
 def classify_with_predict_label(label, data_file):
     
@@ -497,6 +525,20 @@ def classify_with_predict_label(label, data_file):
 
     return positive_seq, negative_seq
 
+
+def auROCplot():
+    ### auROC ###
+    plt.plot([0, 1], [0, 1], linestyle='--', lw=2, color='k', label='Random')
+    plt.xlim([-0.05, 1.05])
+    plt.ylim([-0.05, 1.05])
+    plt.xlabel('False Positive Rate (FPR)', fontsize=12, fontweight='bold')
+    plt.ylabel('True Positive Rate (TPR)', fontsize=12, fontweight='bold')
+    plt.title('Caps Receiver Operating Characteristic (ROC)')
+    plt.legend(loc='lower right')
+    plt.savefig('auROC_caps.png', dpi=300)
+    plt.show()
+    ### --- ###
+
 if __name__ == "__main__":
-    train_caps(data_file= "Datasets/%s/train/%s/sequence.fa"%(filename[25],number))
-    test_caps(data_file= "Datasets/%s/test/%s/sequence.fa"%(filename[25],number))
+    #train_caps(data_file= "Datasets/%s/train/%s/sequence.fa"%(filename[25],number))
+    #test_caps(data_file= "Datasets/%s/test/%s/sequence.fa"%(filename[25],number))
