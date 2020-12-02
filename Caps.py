@@ -542,5 +542,5 @@ def auROCplot():
     ### --- ###
 
 if __name__ == "__main__":
-    #train_caps(data_file= "Datasets/%s/train/%s/sequence.fa"%(filename[25],number))
-    #test_caps(data_file= "Datasets/%s/test/%s/sequence.fa"%(filename[25],number))
+    train_caps(data_file= "Datasets/%s/train/%s/sequence.fa"%(filename[25],number))
+    test_caps(data_file= "Datasets/%s/test/%s/sequence.fa"%(filename[25],number))
