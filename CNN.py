@@ -288,7 +288,7 @@ def test_HOCNN(data_file):
             fpr,
             tpr,
             linestyle='-',
-            label='{} ({:0.3f})'.format("AUC_CAPs", roc_auc), lw=2.0)
+            label='{} ({:0.3f})'.format("AUC_CNN", roc_auc), lw=2.0)
 
     auROCplot()
 
