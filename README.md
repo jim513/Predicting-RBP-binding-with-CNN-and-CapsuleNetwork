@@ -3,16 +3,22 @@
 # Dependency
 Linux
 
-Python== 3.7.9
+Python = 3.7.9
 
-Keras==2.4.3
+Keras = 2.4.3
 
-pandas==1.1.2
+tensorflow = 2.3.1
 
-numpy==1.19.1
+pandas =1.1.2
 
-scikit-learn=0.19.0
+numpy =1.19.1
 
-scipy=1.5.2
+matplotlib = 3.1.0
+
+scikit-learn = 0.19.0
+
+scipy = 1.5.2
+
+biopython = 1.78
 
 meme = 5.2.0
