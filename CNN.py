@@ -11,6 +11,7 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.keras import datasets, layers, models
 #from keras import datasets, layers, models
+tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 
 from sklearn.model_selection import KFold
 from sklearn.metrics import roc_curve, auc
@@ -413,8 +414,8 @@ def auROCplot():
 if __name__ == '__main__':
     # download lncRBPdata.zip from https://github.com/NWPU-903PR/HOCNNLB
     # data_file="./RBPdata1201/01_HITSCLIP_AGO2Karginov2013a_hg19/train/1/sequence.fa.gz"  was renamed
-    train_HOCNN(data_file= "Datasets/%s/train/%s/sequence.fa"%(filename[16],number))
-    test_HOCNN(data_file= "Datasets/%s/test/%s/sequence.fa"%(filename[16],number))
+    train_HOCNN(data_file= "Datasets/%s/train/%s/sequence.fa"%(filename[2],number))
+    test_HOCNN(data_file= "Datasets/%s/test/%s/sequence.fa"%(filename[2],number))
   
 
 #텐서보드 extension 로드를 위한 magic command
