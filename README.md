@@ -1,4 +1,4 @@
-# Predicting-RBP-binding-with-CNN
+# Predicting-RBP-binding-with-CNN-and-CapsuleNetwork
  딥러닝 기법을 이용한 단백질-핵산 결합 모티프 발굴 프레임워크입니다. CNN과 Capsule Netwokr 기법을 이용하여 RNA 염기서열을 분류할 수 있습니다. 모티프 발굴을 진행하기위하여 MEME 5.2이상의 버전이 요구됩니다. lncRNA 염기서열 데이터셋이 동봉되어 테스트를 진행해 볼 수 있습니다. AUC-ROC 성능 그래프로 성능을 확인할 수 있습니다.
  
 # Dependency
