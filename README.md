@@ -25,12 +25,13 @@ biopython = 1.78
 meme = 5.2.0
 
 # Execute Step
+1. 리눅스 환경에서 파이썬 및 라이브러리를 설치해주세요.
 
-1. 사용 알고리즘(CNN.py 혹은 Caps.py)에서 사용할 데이터 경로를 수정해주세요.
+2. 사용 알고리즘(CNN.py 혹은 Caps.py)에서 사용할 데이터 경로를 수정해주세요.
 
-2. python CNN.py 혹은 python Caps.py 커맨드로 프로그램을 실행해주세요.
+3. 터미널에서 python CNN.py 혹은 python Caps.py 커맨드로 프로그램을 실행해주세요. 학습이 진행되고 결과를 얻을 수 있습니다.
 
-3. meme 패키지를 설치하여 streme --oc output_file --rna --p Positive_sequence.txt --n Negative_sequence.txt 명령어를 실행해주세요.
+4. meme 패키지를 설치하여 streme --oc output_file --rna --p Positive_sequence.txt --n Negative_sequence.txt 명령어를 실행해주세요. 모티프를 확인해 볼 수 있습니다.
 
 P.s)meme 설치 경로 http://meme-suite.org/doc/download.html
 
