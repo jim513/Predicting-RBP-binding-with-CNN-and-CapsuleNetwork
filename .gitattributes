@@ -1,0 +1,2 @@
+CNN filter=lfs diff=lfs merge=lfs -text
+Caps filter=lfs diff=lfs merge=lfs -text
