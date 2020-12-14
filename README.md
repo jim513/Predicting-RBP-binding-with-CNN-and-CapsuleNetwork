@@ -33,7 +33,6 @@ meme = 5.2.0
 
 4. meme 패키지를 설치하여 streme --oc output_file --rna --p Positive_sequence.txt --n Negative_sequence.txt 명령어를 실행해주세요. 모티프를 확인해 볼 수 있습니다.
 
-5. 설치 없이 기본경로 데이터로 지정된 실행파일 CNN , Caps가 있습니다. 리눅스 터미널에서 ./CNN, ./Caps로 실행해주세요.
 
 P.s)meme 설치 경로 http://meme-suite.org/doc/download.html
 
